@@ -19,25 +19,31 @@ const fmt = (d: string) => {
 
 const STRIPES = 'repeating-linear-gradient(45deg, var(--color-line) 0 1px, transparent 1px 10px)'
 
+const VISIT_BTN = 'btn-outline fs-small ml-auto shrink-0 gap-1.5 !px-3 !py-1.5'
+
 export default function ProjectCard({
   project: p,
   score,
   myVote,
   onVote,
   onTag,
+  example = false,
 }: {
   project: Project
   score: number
   myVote: 0 | 1 | -1
   onVote: (v: 1 | -1) => void
   onTag: (t: string) => void
+  /** placeholder card: shows an "Example" badge, voting and the visit link are disabled */
+  example?: boolean
 }) {
   const [imgOk, setImgOk] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0 })
 
-  const repo = repoPath(p.github)
-  const href = projectUrl(p)
+  const repo = repoPath(p.github ?? '')
+  // an example has no real site, so don't build a project URL for it
+  const href = example ? '#' : projectUrl(p)
   const date = fmt(p.createdAt)
 
   // same shape the page hero passes to HoverPreview
@@ -61,7 +67,7 @@ export default function ProjectCard({
       <article className="border-line bg-page flex h-full flex-col overflow-hidden border transition-colors duration-150 hover:border-[var(--color-primary)]">
         {/* image only: not a link, no hover preview. 2:1 matches the GitHub card image */}
         <div
-          className="border-line aspect-[2/1] w-full shrink-0 border-b"
+          className="border-line relative aspect-[2/1] w-full shrink-0 border-b"
           style={{ backgroundImage: STRIPES }}
         >
           {repo && imgOk && (
@@ -73,6 +79,12 @@ export default function ProjectCard({
               onError={() => setImgOk(false)}
               className="h-full w-full object-cover"
             />
+          )}
+
+          {example && (
+            <span className="bg-page border-line text-brand absolute left-2 top-2 border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide">
+              Example
+            </span>
           )}
         </div>
 
@@ -117,7 +129,8 @@ export default function ProjectCard({
                   <button
                     type="button"
                     onClick={() => onTag(t)}
-                    className="border-line text-muted-c hover:border-brand hover:text-[color:var(--color-primary)] border px-1.5 py-0.5 text-[11px]"
+                    disabled={example}
+                    className="border-line text-muted-c hover:border-brand hover:text-[color:var(--color-primary)] border px-1.5 py-0.5 text-[11px] disabled:pointer-events-none"
                   >
                     #{t}
                   </button>
@@ -133,8 +146,9 @@ export default function ProjectCard({
             type="button"
             aria-label="Upvote"
             aria-pressed={myVote === 1}
+            disabled={example}
             onClick={() => onVote(1)}
-            className={myVote === 1 ? 'text-brand' : 'text-muted-c hover-brand'}
+            className={`${myVote === 1 ? 'text-brand' : 'text-muted-c hover-brand'} disabled:pointer-events-none disabled:opacity-50`}
           >
             <ArrowBigUp size={24} fill={myVote === 1 ? 'currentColor' : 'none'} />
           </button>
@@ -145,26 +159,29 @@ export default function ProjectCard({
             type="button"
             aria-label="Downvote"
             aria-pressed={myVote === -1}
+            disabled={example}
             onClick={() => onVote(-1)}
-            className={myVote === -1 ? 'text-brand' : 'text-muted-c hover-brand'}
+            className={`${myVote === -1 ? 'text-brand' : 'text-muted-c hover-brand'} disabled:pointer-events-none disabled:opacity-50`}
           >
             <ArrowBigDown size={24} fill={myVote === -1 ? 'currentColor' : 'none'} />
           </button>
 
-          <a
-            href={href}
-            aria-label={`Visit ${p.name}`}
-            className="btn-outline fs-small ml-auto shrink-0 gap-1.5 !px-3 !py-1.5"
-            {...hover}
-          >
-            Visit site
-            <ArrowUpRight size={16} className="shrink-0" />
-          </a>
+          {example ? (
+            <span aria-disabled="true" className={`${VISIT_BTN} opacity-50`}>
+              Visit site
+              <ArrowUpRight size={16} className="shrink-0" />
+            </span>
+          ) : (
+            <a href={href} aria-label={`Visit ${p.name}`} className={VISIT_BTN} {...hover}>
+              Visit site
+              <ArrowUpRight size={16} className="shrink-0" />
+            </a>
+          )}
         </div>
       </article>
 
       {/* rendered outside the card so overflow-hidden can't clip it */}
-      {showPreview && <HoverPreview key={href} link={link} x={pos.x} y={pos.y} />}
+      {!example && showPreview && <HoverPreview key={href} link={link} x={pos.x} y={pos.y} />}
     </>
   )
 }
